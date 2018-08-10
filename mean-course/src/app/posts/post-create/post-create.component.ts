@@ -1,17 +1,19 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, OnDestroy} from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { PostsService } from '../posts.service';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { Post } from '../posts.model';
 import { mimeType} from './mime-type.validator';
+import { Subscription } from 'rxjs';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   templateUrl: './post-create.component.html',
   selector: 'app-post-create',
   styleUrls: ['./post-create.component.css']
 })
-export class PostCreateComponent implements OnInit {
+export class PostCreateComponent implements OnInit, OnDestroy {
   enteredTitle = '';
   enteredContent = '';
   post: Post;
@@ -20,8 +22,9 @@ export class PostCreateComponent implements OnInit {
   imagePreview: string;
   private mode = 'create';
   private postId = '';
+  private authStatusSub: Subscription;
 
-  constructor(public postsService: PostsService, public route: ActivatedRoute) {}
+  constructor(public postsService: PostsService, public route: ActivatedRoute, private authService: AuthService) {}
 
   onSavePost() {
     if (this.form.invalid) {
@@ -53,13 +56,13 @@ export class PostCreateComponent implements OnInit {
         this.isLoading = true;
         // Start Loading post
         this.postsService.getPost(this.postId).subscribe(postData => {
-          this.post = {id: postData._id, title: postData.title, content: postData.content, imagePath: null};
           this.isLoading = false;
           this.post = {
             id: postData._id,
             title: postData.title,
             content: postData.content,
-            imagePath: postData.imagePath
+            imagePath: postData.imagePath,
+            creator: postData.creator
           };
           this.form.setValue({'title': this.post.title, 'content': this.post.content, 'image': this.post.imagePath});
         });
@@ -67,6 +70,11 @@ export class PostCreateComponent implements OnInit {
         this.mode = 'create';
         this.postId = null;
       }
+    });
+    this.authStatusSub = this.authService
+      .getAuthStatusListener()
+      .subscribe( authStatus => {
+      this.isLoading = false;
     });
   }
 
@@ -79,5 +87,9 @@ export class PostCreateComponent implements OnInit {
       this.imagePreview = reader.result;
     };
     reader.readAsDataURL(file);
+  }
+
+  ngOnDestroy() {
+    this.authStatusSub.unsubscribe();
   }
 }

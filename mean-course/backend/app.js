@@ -9,7 +9,7 @@ const userRoutes = require('./routes/user');
 const app = express();
 
 // Connect to mongoDb
-mongoose.connect('mongodb+srv://wbarteck:***REMOVED***@cluster0-44bnq.mongodb.net/node-angular?retryWrites=true') //simple user/password.
+mongoose.connect('mongodb+srv://wbarteck:' + process.env.MONGO_ATLAS_PW + '@cluster0-44bnq.mongodb.net/node-angular?retryWrites=true') //simple user/password.
 .then (() => {
   console.log('Connected to database');
 })
